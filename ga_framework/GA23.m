@@ -79,7 +79,7 @@ bestValidationIndividual = zeros(1, nbrOfGenes);
 % Initialize plots
 gaProgressFigureHandle = figure(2);
 fitnessAxisHandle = subplot(1,2,1, 'Parent', gaProgressFigureHandle);
-fitnessAxisHandle = PlotMaximumFitness([], fitnessAxisHandle, 'kr');
+fitnessAxisHandle = PlotMaximumFitness([], fitnessAxisHandle, 'kkr', 0.001);
 solutionAxisHandle = subplot(1,2,2, 'Parent', gaProgressFigureHandle);
 solutionAxisHandle = PlotPricingSequence(population(1,:), solutionAxisHandle, currentSystemState, systemParameters); % The solution plotting method could be passed as parameter to GA function
 
