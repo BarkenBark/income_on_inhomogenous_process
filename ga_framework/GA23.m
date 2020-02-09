@@ -2,18 +2,35 @@
 clc; clear all
 clf; close all
 
+%% Settings
+
+% Interface
+plotting = true;
+plotInterval = 10; % Only update plots every plotInterval generation
+
 %System
 % The parameters here do not change across GA optimizations
 eventTime = 100; % In time units from start time which is 0
 timeBinWidth = 7;
 nbrOfTimeBins = ceil(eventTime / timeBinWidth);
-ticketSalesCapacity = 100;
-demandEstimationFun = @(t,p) 10*((1-t/eventTime) - (1-t/eventTime) .* tanh(0.01*(1-t/eventTime)*p - 3*(1-t/eventTime)));
+ticketSalesCapacity = 10;
 ticketPriceInterval = [200, 1000];
 ticketPriceResolution = 10;
 systemParameters = struct('eventTime', eventTime, 'timeBinWidth', timeBinWidth, ...
-  'maxTicketsSold', ticketSalesCapacity, 'demandEstimationFun', demandEstimationFun, ...
+  'maxTicketsSold', ticketSalesCapacity, ...
   'ticketPriceInterval', ticketPriceInterval, 'ticketPriceResolution', ticketPriceResolution);
+
+% Demand estimation function
+%demandEstimationFun = @(time,p) 10*((1-t/eventTime) - (1-t/eventTime) .* tanh(0.01*(1-t/eventTime)*p - 3*(1-t/eventTime)));
+iDemand = 2;
+if iDemand == 1 % Tanh demand
+  parameters = [7.5, 0.015, 4.5, 100, eventTime];
+  demandEstimationFun = @(t,p) TanhDemand(t, p, parameters);
+elseif iDemand == 2 % Tanh2 demand
+  parameters = [10, 0.8, 0.02, 10, 10, eventTime];
+  demandEstimationFun = @(t,p) TanhDemand2(t, p, parameters);
+end
+systemParameters.demandEstimationFun = demandEstimationFun;
 
 % System state
 % The parameters here are updated for every time we'll do a GA optimization
@@ -44,26 +61,27 @@ ylabel('Demand (sales/day)')
 
 
 %% Genetic Algorithm - Parameters
-NUMBER_OF_GENERATIONS = 1000;
+NUMBER_OF_GENERATIONS = 3000;
 COPIES_OF_BEST_INDIVIDUAL = 2;
 HOLDOUT_THRESHOLD = 100; %No. generations to wait for improvement before termination
 
 populationSize = 100;
 nbrOfGenes = nbrOfTimeBins - currentTimeIndex + 1;
 
-mutationProbability = 4/nbrOfGenes;
+mutationProbability = 0.1; %4/nbrOfGenes;
 creepRate = 0.1;
-creepProbability = 0.95;
-tournamentSelectionParameter = 0.70;
+creepProbability = 0.8;
+tournamentSelectionParameter = 0.7; %0.70;
 tournamentSize = 2;
 crossoverProbability = 0.3;
 
 %% Print some statistics
 
+evaluationTimeSeconds = EstimateEvaluationTimeTick(nbrOfGenes, systemParameters); % Measured using TestScript MeasureEvaluationTime
 nbrOfFeasibleSolutions = ((ticketPriceInterval(2)-ticketPriceInterval(1)) / ticketPriceResolution)^nbrOfTimeBins; % NOTE: This is not correct.
-fprintf('Total number of feasible solutions: %d\n', nbrOfFeasibleSolutions)
+fprintf('Total number of feasible solutions: %d corresponding to %.2f years\n', nbrOfFeasibleSolutions, nbrOfFeasibleSolutions*evaluationTimeSeconds/60/60/24/365);
 nbrOfGaEvaluations = populationSize*NUMBER_OF_GENERATIONS;
-fprintf('Expected number of GA evaluations: %d\n\n', nbrOfGaEvaluations)
+fprintf('Expected number of GA evaluations: %d corresponding to %.2f minutes\n\n', nbrOfGaEvaluations, nbrOfGaEvaluations*evaluationTimeSeconds/60);
 
 
 %% Genetic Algorithm - Script
@@ -119,35 +137,13 @@ for iGeneration = 1:NUMBER_OF_GENERATIONS
 %     end
 %   end
      
-%   % Update training curves
-  PlotMaximumFitness(maximumTrainingFitness(1:iGeneration), fitnessAxisHandle);
-
-%   subplot(1,2,1)
-%   cla
-%   hold on
-%   plot(maximumTrainingFitness(1:iGeneration))
-%   %plot(maximumValidationFitness(1:iGeneration))
-%   set(gca, 'FontSize', 14)
-%   xlabel('Generation')
-%   ylabel('Fitness')
-%   %legend({'Training', 'Validation'}, 'Location', 'southeast')
-%   drawnow
-  
-  % Update best sequence plot
-  PlotPricingSequence(bestPricingSequence, solutionAxisHandle, currentSystemState, systemParameters);
-  
-%   subplot(1,2,2)
-%   cla
-%   sequencePlotTime = (currentTimeIndex-1:nbrOfTimeBins-1)*timeBinWidth;
-%   stairs(sequencePlotTime, DecodeChromosome(bestIndividual, ticketPriceInterval, ticketPriceResolution))
-%   ylim(ticketPriceInterval)
-%   xlabel('Time (days)')
-%   ylabel('Price (kr)')
-%   title(sprintf('Starting from day %d/%d', (currentTimeIndex-1)*timeBinWidth, eventTime))
-%   drawnow
-
-  drawnow
-  
+  % Update plots
+  if plotting && mod(iGeneration, plotInterval)==0
+    PlotMaximumFitness(maximumTrainingFitness(1:iGeneration), fitnessAxisHandle);
+    PlotPricingSequence(bestPricingSequence, solutionAxisHandle, currentSystemState, systemParameters);
+    drawnow
+  end
+    
   if iGeneration == NUMBER_OF_GENERATIONS
     fprintf('All %d generations completed.\n', NUMBER_OF_GENERATIONS);
     break
@@ -181,8 +177,10 @@ for iGeneration = 1:NUMBER_OF_GENERATIONS
     tempPopulation(i,:) = mutatedChromosome;
   end
 
+  % Insertion
   tempPopulation = InsertBestIndividual(tempPopulation, bestIndividual, ...
     COPIES_OF_BEST_INDIVIDUAL);
+  
   population = tempPopulation;
  
   if mod(iGeneration, NUMBER_OF_GENERATIONS/50)==0

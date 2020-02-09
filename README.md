@@ -40,13 +40,17 @@ The total income
   # TODO:
 
 - [ ] Refactor Genetic Algorithm to a function
+- [x] Refactor DemandEstimation to a function
+  - [x] Verify
+- [x] Create function for estimating the time it takes to do N evaluations
+- [ ] Refactor EvaluateIndividual such that it uses currentState.sequenceTimes rather than constant timeBinWidth assumption
 - [x] Refactor fitness plotting to a function updating axis handle
 - [ ] Implement script using GA to optimize day-by-day
 - [ ] Implement validation through stochastic simulation
 - [ ] Allow for time discretization with various bin width
 - [x] In pricing sequence plot, add line marking where we expect the tickets to be sold out
 - [ ] In pricing sequence plot, include some other closely performing individuals with thinner lines than the best performing one
-- [ ] Redefine sequenceTime such that is contains all bin edges including the right bin edge of the last bin
+- [x] Redefine sequenceTime such that is contains all bin edges including the right bin edge of the last bin
   - [ ] Also make sure the naming of this vector is consistent
 - [ ] Make Chromosome representation of Pricing Sequence more efficient by exploiting the finite resolution and range
 
@@ -58,3 +62,4 @@ The total income
   - Use reasonable pricing caps, forcing prices within the domain of prices having a real effect on the solution fitness
   - Enforce some constraint in chromosome decoding making it unable to spike
   - Capture the effect of too dynamic pricing in estimated demand function
+  - Could we make genes that deviate the (global or local) mean have a higher mutation probability?

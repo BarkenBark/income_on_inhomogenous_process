@@ -23,7 +23,7 @@ function fitness = EvaluateIndividual(pricingSequence, currentSystemState, syste
     end
     time = timeBinWidth*(iTime-1); % NOTE: Maybe replace with middle time of bin, rather than starting time of bin as it is now?
     ticketPrice = pricingSequence(iTime-currentTimeIndex+1);
-    lambda = demandEstimationFun(time, ticketPrice); % NOTE: Should redfine the demandEstimationFunction such that it expects timeUntilEvent rather than current time
+    lambda = demandEstimationFun(time, ticketPrice);
     expectedBinTicketsSold = min(lambda*timeBinWidth, ticketSalesCapacity-expectedTicketsSold);
     expectedTicketsSold = expectedTicketsSold + expectedBinTicketsSold;
     expectedTimeBinIncome = expectedBinTicketsSold*ticketPrice;
