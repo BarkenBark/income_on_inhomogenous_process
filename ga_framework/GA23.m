@@ -5,20 +5,22 @@ clf; close all
 %System
 % The parameters here do not change across GA optimizations
 eventTime = 100; % In time units from start time which is 0
-timeBinWidth = 1;
+timeBinWidth = 7;
 nbrOfTimeBins = ceil(eventTime / timeBinWidth);
-ticketSalesCapacity = 1000;
+ticketSalesCapacity = 100;
 demandEstimationFun = @(t,p) 10*((1-t/eventTime) - (1-t/eventTime) .* tanh(0.01*(1-t/eventTime)*p - 3*(1-t/eventTime)));
-ticketPriceInterval = [100, 1000];
+ticketPriceInterval = [200, 1000];
 ticketPriceResolution = 10;
 systemParameters = struct('eventTime', eventTime, 'timeBinWidth', timeBinWidth, ...
-  'maxTicketsSold', ticketSalesCapacity, 'demandEstimationFun', demandEstimationFun);
+  'maxTicketsSold', ticketSalesCapacity, 'demandEstimationFun', demandEstimationFun, ...
+  'ticketPriceInterval', ticketPriceInterval, 'ticketPriceResolution', ticketPriceResolution);
 
 % System state
 % The parameters here are updated for every time we'll do a GA optimization
-currentTimeIndex = 90;
-currentTicketsSold = 621;
-currentSystemState = struct('currentTimeIndex', currentTimeIndex, 'currentTicketsSold', currentTicketsSold);
+currentTimeIndex = 1;
+currentTicketsSold = 0;
+sequenceTimes = ((currentTimeIndex-1):(nbrOfTimeBins))*timeBinWidth;
+currentSystemState = struct('currentTimeIndex', currentTimeIndex, 'currentTicketsSold', currentTicketsSold, 'sequenceTimes', sequenceTimes);
 
 
 %% Plot demand estimation function over the defined time interval
@@ -31,12 +33,14 @@ timePlotRange = linspace(0, eventTime, tRes);
 f1 = figure(1);
 legendStrings = {};
 for price = pricePlotRange
-  legendStrings{end+1} = num2str(price);
+  legendStrings{end+1} = strcat(num2str(price), ' kr');
   lambdas = demandEstimationFun(timePlotRange, price);
   plot(timePlotRange, lambdas);
   hold on
 end
 legend(legendStrings)
+xlabel('Time (days)')
+ylabel('Demand (sales/day)')
 
 
 %% Genetic Algorithm - Parameters
@@ -54,6 +58,14 @@ tournamentSelectionParameter = 0.70;
 tournamentSize = 2;
 crossoverProbability = 0.3;
 
+%% Print some statistics
+
+nbrOfFeasibleSolutions = ((ticketPriceInterval(2)-ticketPriceInterval(1)) / ticketPriceResolution)^nbrOfTimeBins; % NOTE: This is not correct.
+fprintf('Total number of feasible solutions: %d\n', nbrOfFeasibleSolutions)
+nbrOfGaEvaluations = populationSize*NUMBER_OF_GENERATIONS;
+fprintf('Expected number of GA evaluations: %d\n\n', nbrOfGaEvaluations)
+
+
 %% Genetic Algorithm - Script
 
 population = InitializePopulation2(populationSize, nbrOfGenes);
@@ -64,7 +76,12 @@ prevMaximumValidationFitness = 0;
 maximumValidationFitnessSoFar = 0;
 bestValidationIndividual = zeros(1, nbrOfGenes);
 
-f2 = figure(2);
+% Initialize plots
+gaProgressFigureHandle = figure(2);
+fitnessAxisHandle = subplot(1,2,1, 'Parent', gaProgressFigureHandle);
+fitnessAxisHandle = PlotMaximumFitness([], fitnessAxisHandle, 'kr');
+solutionAxisHandle = subplot(1,2,2, 'Parent', gaProgressFigureHandle);
+solutionAxisHandle = PlotPricingSequence(population(1,:), solutionAxisHandle, currentSystemState, systemParameters); % The solution plotting method could be passed as parameter to GA function
 
 t = tic;
 holdoutStrikes = 0;
@@ -102,27 +119,33 @@ for iGeneration = 1:NUMBER_OF_GENERATIONS
 %     end
 %   end
      
-  % Update traiing curves
-  subplot(1,2,1)
-  cla
-  hold on
-  plot(maximumTrainingFitness(1:iGeneration))
-  %plot(maximumValidationFitness(1:iGeneration))
-  set(gca, 'FontSize', 14)
-  xlabel('Generation')
-  ylabel('Fitness')
-  %legend({'Training', 'Validation'}, 'Location', 'southeast')
-  drawnow
+%   % Update training curves
+  PlotMaximumFitness(maximumTrainingFitness(1:iGeneration), fitnessAxisHandle);
+
+%   subplot(1,2,1)
+%   cla
+%   hold on
+%   plot(maximumTrainingFitness(1:iGeneration))
+%   %plot(maximumValidationFitness(1:iGeneration))
+%   set(gca, 'FontSize', 14)
+%   xlabel('Generation')
+%   ylabel('Fitness')
+%   %legend({'Training', 'Validation'}, 'Location', 'southeast')
+%   drawnow
   
   % Update best sequence plot
-  subplot(1,2,2)
-  cla
-  sequencePlotTime = (currentTimeIndex-1:nbrOfTimeBins-1)*timeBinWidth;
-  plot(sequencePlotTime, DecodeChromosome(bestIndividual, ticketPriceInterval, ticketPriceResolution))
-  ylim(ticketPriceInterval)
-  xlabel('Time (days)')
-  ylabel('Price (kr)')
-  title(sprintf('Starting from day %d/%d', (currentTimeIndex-1)*timeBinWidth, eventTime))
+  PlotPricingSequence(bestPricingSequence, solutionAxisHandle, currentSystemState, systemParameters);
+  
+%   subplot(1,2,2)
+%   cla
+%   sequencePlotTime = (currentTimeIndex-1:nbrOfTimeBins-1)*timeBinWidth;
+%   stairs(sequencePlotTime, DecodeChromosome(bestIndividual, ticketPriceInterval, ticketPriceResolution))
+%   ylim(ticketPriceInterval)
+%   xlabel('Time (days)')
+%   ylabel('Price (kr)')
+%   title(sprintf('Starting from day %d/%d', (currentTimeIndex-1)*timeBinWidth, eventTime))
+%   drawnow
+
   drawnow
   
   if iGeneration == NUMBER_OF_GENERATIONS
@@ -175,22 +198,18 @@ end
 %% Plot the best pricing sequence
 
 f3 = figure(3);
-t = (currentTimeIndex-1:nbrOfTimeBins-1)*timeBinWidth;
-plot(t, DecodeChromosome(bestIndividual, ticketPriceInterval, ticketPriceResolution))
-ylim(ticketPriceInterval)
-xlabel('Time (days)')
-ylabel('Price (kr)')
-title(sprintf('Starting from day %d/%d', (currentTimeIndex-1)*timeBinWidth, eventTime))
+ax = axes(f3);
+bestPricingSequence = DecodeChromosome(bestIndividual, systemParameters.ticketPriceInterval, systemParameters.ticketPriceResolution);
+PlotPricingSequence(bestPricingSequence, ax, currentSystemState, systemParameters);
 
 %% Print relevent stats
 
 disp(' ')
 currentPrice = bestPricingSequence(1);
 meanFirstPrices = mean(bestPricingSequence(1:5));
-[~, expectedTicketsSoldHistory] = EvaluateIndividual(bestPricingSequence, currentSystemState, systemParameters);
+[expectedTicketsSoldFinal, expectedTicketDepletionTimeFinal] = EstimateTicketDepletion(bestPricingSequence, currentSystemState, systemParameters);
 fprintf('Starting day: %d\n', (currentTimeIndex-1)*timeBinWidth)
-fprintf('Current price: %d\nCurrent price (mean): %d\n', currentPrice, meanFirstPrices)
-fprintf('Expected tickets sold in the next 10 days: %d\n', expectedTicketsSoldHistory(10))
+fprintf('Current price: %d\nCurrent price (mean): %d\n', currentPrice, meanFirstPrices) ,
 
 
 

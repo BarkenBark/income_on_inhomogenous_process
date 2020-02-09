@@ -2,11 +2,10 @@ function fitness = EvaluateIndividual(pricingSequence, currentSystemState, syste
   
   % pricingSequence should be a vector whose length is equal to the number
   % of remaining time steps until the event
-  % demandEstimation is a function of 
   
   demandEstimationFun = systemParameters.demandEstimationFun;
   eventTime = systemParameters.eventTime;
-  timeBinWidth = systemParameters.timeBinWidth;
+  timeBinWidth = systemParameters.timeBinWidth; % TODO: Discard this as a constant. Calculate timeBinWidth dynamically from time sequence
   ticketSalesCapacity = systemParameters.maxTicketsSold;
   eventTimeIndex = ceil(eventTime / timeBinWidth);
 
@@ -19,18 +18,18 @@ function fitness = EvaluateIndividual(pricingSequence, currentSystemState, syste
   expectedRemainingIncome = 0;
   expectedTicketsSold = currentTicketsSold;
   for iTime = currentTimeIndex:eventTimeIndex
-    if expectedTicketsSold > ticketSalesCapacity
-      %disp('Expected ticket sales exceeded limit')
+    if expectedTicketsSold > ticketSalesCapacity % We do not expect our remaining income to be affected by sales after the point at which we expect to have sold out the tickets
+      disp(iTime)
       break
     end
-    time = timeBinWidth*(iTime-1)
-    %timeUntilEvent = eventTime - time;
+    time = timeBinWidth*(iTime-1); % NOTE: Maybe replace with middle time of bin, rather than starting time of bin as it is now?
     ticketPrice = pricingSequence(iTime-currentTimeIndex+1);
-    lambda = demandEstimationFun(time, ticketPrice); % NOTE: Should redfine the demandEstimationFunction such
+    lambda = demandEstimationFun(time, ticketPrice); % NOTE: Should redfine the demandEstimationFunction such that it expects timeUntilEvent rather than current time
+    expectedBinTicketsSold = 
     expectedTicketsSold = expectedTicketsSold + lambda*timeBinWidth;
     expectedTimeBinIncome = lambda*timeBinWidth*ticketPrice;
     expectedRemainingIncome = expectedRemainingIncome + expectedTimeBinIncome;
-    fprintf('%.2f, %.2f, %d\n', lambda, expectedTimeBinIncome, timeUntilEvent);
+    %fprintf('%d, %.2f, %.2f, %.2f, %d\n', expectedTicketsSold, lambda, expectedTimeBinIncome, ticketPrice, time);
   end
   
   fitness = expectedRemainingIncome;

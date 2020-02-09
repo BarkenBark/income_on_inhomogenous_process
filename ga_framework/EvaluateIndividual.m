@@ -1,12 +1,11 @@
-function [fitness, expectedTicketsSoldHistory] = EvaluateIndividual(pricingSequence, currentSystemState, systemParameters)
+function fitness = EvaluateIndividual(pricingSequence, currentSystemState, systemParameters)
   
   % pricingSequence should be a vector whose length is equal to the number
   % of remaining time steps until the event
-  % demandEstimation is a function of 
   
   demandEstimationFun = systemParameters.demandEstimationFun;
   eventTime = systemParameters.eventTime;
-  timeBinWidth = systemParameters.timeBinWidth;
+  timeBinWidth = systemParameters.timeBinWidth; % TODO: Discard this as a constant. Calculate timeBinWidth dynamically from time sequence
   ticketSalesCapacity = systemParameters.maxTicketsSold;
   eventTimeIndex = ceil(eventTime / timeBinWidth);
 
@@ -18,20 +17,16 @@ function [fitness, expectedTicketsSoldHistory] = EvaluateIndividual(pricingSeque
   % above represents where we will be in future time
   expectedRemainingIncome = 0;
   expectedTicketsSold = currentTicketsSold;
-  expectedTicketsSoldHistory = zeros(1, eventTimeIndex-currentTimeIndex+1);
-  expectedTicketsSoldHistory(1) = currentTicketsSold;
   for iTime = currentTimeIndex:eventTimeIndex
-    expectedTicketsSoldHistory(iTime-currentTimeIndex+1) = expectedTicketsSold;
-    if expectedTicketsSold > ticketSalesCapacity
-      fprintf('Expected ticket sales exceeded limit at time %d', time)
+    if expectedTicketsSold >= ticketSalesCapacity % We do not expect our remaining income to be affected by sales after the point at which we expect to have sold out the tickets
       break
     end
-    time = timeBinWidth*(iTime-1);
-    %timeUntilEvent = eventTime - time;
+    time = timeBinWidth*(iTime-1); % NOTE: Maybe replace with middle time of bin, rather than starting time of bin as it is now?
     ticketPrice = pricingSequence(iTime-currentTimeIndex+1);
     lambda = demandEstimationFun(time, ticketPrice); % NOTE: Should redfine the demandEstimationFunction such that it expects timeUntilEvent rather than current time
-    expectedTicketsSold = expectedTicketsSold + lambda*timeBinWidth;
-    expectedTimeBinIncome = lambda*timeBinWidth*ticketPrice;
+    expectedBinTicketsSold = min(lambda*timeBinWidth, ticketSalesCapacity-expectedTicketsSold);
+    expectedTicketsSold = expectedTicketsSold + expectedBinTicketsSold;
+    expectedTimeBinIncome = expectedBinTicketsSold*ticketPrice;
     expectedRemainingIncome = expectedRemainingIncome + expectedTimeBinIncome;
     %fprintf('%d, %.2f, %.2f, %.2f, %d\n', expectedTicketsSold, lambda, expectedTimeBinIncome, ticketPrice, time);
   end
