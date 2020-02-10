@@ -23,6 +23,7 @@ copiesOfBestIndividual = parameters.copiesOfBestIndividual;
 % % Visualization parameters
 plotting = parameters.plotting;
 plotInterval = parameters.plotInterval;
+fitnessPlotFunction = parameters.fitnessPlotFunction;
 solutionPlotFunction = parameters.solutionPlotFunction;
 
 % Initialize population
@@ -31,7 +32,7 @@ maximumTrainingFitness = zeros(1, nbrOfGenerations);
 
 % Initialize plots
 fitnessAxisHandle = subplot(1,2,1, 'Parent', progressFigureHandle);
-fitnessAxisHandle = PlotMaximumFitness([], fitnessAxisHandle);
+fitnessAxisHandle = fitnessPlotFunction([], fitnessAxisHandle);
 solutionAxisHandle = subplot(1,2,2, 'Parent', progressFigureHandle);
 solutionAxisHandle = solutionPlotFunction(population(1,:), solutionAxisHandle);
 
@@ -92,7 +93,7 @@ for iGeneration = 1:nbrOfGenerations
          
   % Update plots
   if plotting && mod(iGeneration, plotInterval)==0
-    PlotMaximumFitness(maximumTrainingFitness(1:iGeneration), fitnessAxisHandle);
+    fitnessPlotFunction(maximumTrainingFitness(1:iGeneration), fitnessAxisHandle);
     solutionPlotFunction(bestIndividual, solutionAxisHandle);
     drawnow
   end

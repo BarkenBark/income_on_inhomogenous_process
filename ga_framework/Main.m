@@ -73,6 +73,7 @@ geneticAlgorithmParameters = struct( ...
   'copiesOfBestIndividual', 2, ...
   'plotting', true, ...
   'plotInterval', 10, ...
+  'fitnessPlotFunction', @(fitnessHistory, ax) PlotMaximumFitness(fitnessHistory, ax, 'kkr', 1/1000),...
   'solutionPlotFunction', [] ... % Needs to be updated for each optimization
 );
 
@@ -115,7 +116,7 @@ for iTimeBin = 1:length(sequenceTimes)-1
   
   % Store intermediate results
   pricingSequenceHistory{iTimeBin} = pricingSequence;
-  finalPricingSequence(iTimeBin) = pricingSequence(1);
+  finalPricingSequence(iTimeBin) = currentPrice;
   expectedRemainingIncomeHistory(iTimeBin) = expectedRemainingIncome;
   currentTicketsSoldHistory(iTimeBin) = currentSystemState.currentTicketsSold;
   salesRateHistory(iTimeBin) = simulatedCurrentSalesRate;
