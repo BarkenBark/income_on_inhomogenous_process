@@ -8,7 +8,7 @@ function axisHandle = PlotMaximumFitness(maximumFitness, axisHandle, fitnessUnit
     fitnessUnitScaling = axisHandle.UserData.fitnessUnitScaling;
     set(maximumFitnessPlotHandle, 'XData', 1:length(maximumFitness), 'YData', maximumFitness*fitnessUnitScaling);
   else
-    disp('Initializing MaximumFitnessPlot')
+    %disp('Initializing MaximumFitnessPlot')
     cla(axisHandle);
     plot(1,0, 'Parent', axisHandle);
     if exist('fitnessUnitString', 'var')

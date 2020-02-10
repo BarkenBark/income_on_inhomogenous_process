@@ -13,7 +13,7 @@ function axisHandle = PlotPricingSequence(pricingSequence, axisHandle, currentSy
     
   else
     
-    disp('Initializing PricingSequencePlot')
+    %disp('Initializing PricingSequencePlot')
     cla(axisHandle)
     sequenceTimes = currentSystemState.remainingSequenceTimes;
     %fprintf('[PlotPricingSequence]: length(sequenceTimes) = %d\n', length(sequenceTimes))
@@ -27,7 +27,7 @@ function axisHandle = PlotPricingSequence(pricingSequence, axisHandle, currentSy
     line(axisHandle, [expectedTicketDepletionTime, expectedTicketDepletionTime], ylim, 'Tag', 'ticketDepletionTime');
     
     xlabel(axisHandle, 'Time (days)');
-    ylabel(axisHandle, 'Price (kr)');
+    ylabel(axisHandle, 'Ticket Price (kr)');
     title(axisHandle, 'Pricing Sequence');
     set(axisHandle, 'YLim', ylim);
     set(axisHandle, 'UserData', 'pricingSequencePlot');
