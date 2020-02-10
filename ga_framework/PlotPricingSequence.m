@@ -15,7 +15,9 @@ function axisHandle = PlotPricingSequence(pricingSequence, axisHandle, currentSy
     
     disp('Initializing PricingSequencePlot')
     cla(axisHandle)
-    sequenceTimes = currentSystemState.sequenceTimes;
+    sequenceTimes = currentSystemState.remainingSequenceTimes;
+    %fprintf('[PlotPricingSequence]: length(sequenceTimes) = %d\n', length(sequenceTimes))
+    %fprintf('[PlotPricingSequence]: length(pricingSequence) = %d\n', length(pricingSequence))
     priceInterval = systemParameters.ticketPriceInterval;
     ylim = priceInterval + 0.05*[-diff(priceInterval), diff(priceInterval)];
     

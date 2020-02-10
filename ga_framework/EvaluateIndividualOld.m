@@ -1,11 +1,15 @@
-function fitness = EvaluateIndividual(pricingSequence, currentSystemState, systemParameters)
+function fitness = EvaluateIndividualOld(pricingSequence, currentSystemState, systemParameters)
   
+  % This old version assumes constant bin width across time
+
   % pricingSequence should be a vector whose length is equal to the number
   % of remaining time steps until the event
   
-  demandEstimationFun = systemParameters.demandEstimationFunction;
+  demandEstimationFun = systemParameters.demandEstimationFun;
+  eventTime = systemParameters.sequenceTimes(end);
+  timeBinWidth = systemParameters.timeBinWidth; % TODO: Discard this as a constant. Calculate timeBinWidth dynamically from time sequence
   ticketSalesCapacity = systemParameters.maxTicketsSold;
-  sequenceTimes = systemParameters.sequenceTimes;
+  eventTimeIndex = ceil(eventTime / timeBinWidth);
 
   currentTimeIndex = currentSystemState.currentTimeIndex;
   currentTicketsSold = currentSystemState.currentTicketsSold;
@@ -15,13 +19,12 @@ function fitness = EvaluateIndividual(pricingSequence, currentSystemState, syste
   % above represents where we will be in future time
   expectedRemainingIncome = 0;
   expectedTicketsSold = currentTicketsSold;
-  for iTimeBin = currentTimeIndex:(length(sequenceTimes)-1)
+  for iTime = currentTimeIndex:eventTimeIndex
     if expectedTicketsSold >= ticketSalesCapacity % We do not expect our remaining income to be affected by sales after the point at which we expect to have sold out the tickets
       break
     end
-    timeBinWidth = sequenceTimes(iTimeBin+1) - sequenceTimes(iTimeBin);
-    time = (sequenceTimes(iTimeBin+1) + sequenceTimes(iTimeBin))/2; 
-    ticketPrice = pricingSequence(iTimeBin-currentTimeIndex+1);
+    time = timeBinWidth*(iTime-1); % NOTE: Maybe replace with middle time of bin, rather than starting time of bin as it is now?
+    ticketPrice = pricingSequence(iTime-currentTimeIndex+1);
     lambda = demandEstimationFun(time, ticketPrice);
     expectedBinTicketsSold = min(lambda*timeBinWidth, ticketSalesCapacity-expectedTicketsSold);
     expectedTicketsSold = expectedTicketsSold + expectedBinTicketsSold;

@@ -39,15 +39,17 @@ The total income
 
   # TODO:
 
-- [ ] Refactor Genetic Algorithm to a function
+- [x] Refactor Genetic Algorithm to a function
+  - [x] Verify
 - [x] Refactor DemandEstimation to a function
   - [x] Verify
 - [x] Create function for estimating the time it takes to do N evaluations
-- [ ] Refactor EvaluateIndividual such that it uses currentState.sequenceTimes rather than constant timeBinWidth assumption
+- [x] Allow for time discretization with various bin width
+  - [x] Refactor EvaluateIndividual such that it uses currentState.sequenceTimes rather than constant timeBinWidth assumption
+  - [x] Decide if you want sequenceTimes to be expressed in time units until event, time units since posted or global time units. **Decision:** Roll with time units since posted for now.
 - [x] Refactor fitness plotting to a function updating axis handle
-- [ ] Implement script using GA to optimize day-by-day
+- [x] Implement script using GA to optimize day-by-day
 - [ ] Implement validation through stochastic simulation
-- [ ] Allow for time discretization with various bin width
 - [x] In pricing sequence plot, add line marking where we expect the tickets to be sold out
 - [ ] In pricing sequence plot, include some other closely performing individuals with thinner lines than the best performing one
 - [x] Redefine sequenceTime such that is contains all bin edges including the right bin edge of the last bin

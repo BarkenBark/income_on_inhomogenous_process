@@ -2,8 +2,8 @@ function [expectedTicketsSold, expectedTicketDepletionTime] = EstimateTicketDepl
   
   ticketSalesCapacity = systemParameters.maxTicketsSold;
   currentTicketsSold = currentSystemState.currentTicketsSold;
-  sequenceTimes = currentSystemState.sequenceTimes;
-  demandEstimationFun = systemParameters.demandEstimationFun;
+  sequenceTimes = currentSystemState.remainingSequenceTimes;
+  demandEstimationFun = systemParameters.demandEstimationFunction;
 
   expectedTicketsSold = currentTicketsSold;
   for iTime = 1:(length(sequenceTimes)-1)

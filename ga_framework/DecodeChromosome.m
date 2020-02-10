@@ -1,5 +1,8 @@
-function pricingSequence = DecodeChromosome(chromosome, ticketPriceInterval, ticketPriceResolution)
+function pricingSequence = DecodeChromosome(chromosome, systemParameters)
 %DecodeChromosome Return the neural network encoded by chromosome
+
+  ticketPriceInterval = systemParameters.ticketPriceInterval;
+  ticketPriceResolution = systemParameters.ticketPriceResolution;
 
   minTicketPrice = ticketPriceInterval(1);
   maxTicketPrice = ticketPriceInterval(2);
