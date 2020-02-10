@@ -71,7 +71,7 @@ geneticAlgorithmParameters = struct( ...
   'tournamentSize', 2, ...
   'crossoverProbability', 0.3, ...
   'copiesOfBestIndividual', 2, ...
-  'plotting', true, ...
+  'plotting', false, ...
   'plotInterval', 10, ...
   'fitnessPlotFunction', @(fitnessHistory, ax) PlotMaximumFitness(fitnessHistory, ax, 'kkr', 1/1000),...
   'solutionPlotFunction', [] ... % Needs to be updated for each optimization
@@ -84,6 +84,9 @@ finalPricingSequence = zeros(1, length(sequenceTimes)-1);
 expectedRemainingIncomeHistory = zeros(1, length(sequenceTimes)-1);
 currentTicketsSoldHistory = zeros(1, length(sequenceTimes)-1);
 salesRateHistory = zeros(1, length(sequenceTimes)-1);
+cumulativeIncome = zeros(1, length(sequenceTimes)-1);
+
+progressFigureHandle = figure(1);
 
 currentSystemState = struct('currentTimeIndex', 1, ...
   'remainingSequenceTimes', sequenceTimes, 'currentTicketsSold', initialNbrOfTicketsSold); % NOTE: Field remainingSequenceTimes is redundant, but is kept for compability with a function
@@ -99,10 +102,9 @@ for iTimeBin = 1:length(sequenceTimes)-1
   geneticAlgorithmParameters.mutationProbability = 4/nbrOfGenes;
   geneticAlgorithmParameters.fitnessFunction = fitnessFunction;
   geneticAlgorithmParameters.solutionPlotFunction = @(sol, ax) PlotPricingSequence(sol, ax, currentSystemState, systemParameters);
-  progressFigureHandle = figure(1);
   clf(progressFigureHandle)
   [pricingSequence, expectedRemainingIncome] = GeneticAlgorithm(geneticAlgorithmParameters, progressFigureHandle);
-  input('Press enter to continue (1/2).\n')
+  %input('Press enter to continue (1/2).\n')
   
   % Simulate and update system state changes
   currentPrice = pricingSequence(1);
@@ -120,15 +122,62 @@ for iTimeBin = 1:length(sequenceTimes)-1
   expectedRemainingIncomeHistory(iTimeBin) = expectedRemainingIncome;
   currentTicketsSoldHistory(iTimeBin) = currentSystemState.currentTicketsSold;
   salesRateHistory(iTimeBin) = simulatedCurrentSalesRate;
-  input('Press enter to continue (2/2).\n')
+  cumulativeIncome(iTimeBin:end) = cumulativeIncome(iTimeBin:end) + currentPrice*thisBinTicketsSold;
+  %input('Press enter to continue (2/2).\n')
 
   
 end
 
+%% Calculate some statistics
+
+%% Plot results
+
+resultsFig = figure(2);
+clf(resultsFig)
+
+% Price vs demand
+subplot(2,2,1);
+hold on
+yyaxis left
+stairs(sequenceTimes(1:end-1), finalPricingSequence);
+yyaxis right
+stairs(sequenceTimes(1:end-1), salesRateHistory, '--');
+ylabel('Demand (sales/day)')
+title('Ticket price vs. sales rate (NOTE: Time dependence)')
+
+% Price vs expectedRemainingIncome
+subplot(2,2,2);
+hold on
+yyaxis left
+stairs(sequenceTimes(1:end-1), finalPricingSequence);
+ylabel('Price (kr)')
+yyaxis right
+stairs(sequenceTimes(1:end-1), expectedRemainingIncomeHistory/1000, '--');
+ylabel('Income (kkr)')
+title('Ticket price vs. expected remaining income')
 
 
-%% 
+% Price vs money cash made
+subplot(2,2,3);
+hold on
+yyaxis left
+stairs(sequenceTimes(1:end-1), finalPricingSequence);
+ylabel('Price (kr)')
+yyaxis right
+stairs(sequenceTimes(1:end-1), cumulativeIncome/1000, '--');
+ylabel('Income (kkr)')
+title('Ticket price vs. cumulative income')
 
+% Price vs tickets sold
+subplot(2,2,4);
+hold on
+yyaxis left
+stairs(sequenceTimes(1:end-1), finalPricingSequence);
+ylabel('Price (kr)')
+yyaxis right
+ylabel('Sold tickets')
+stairs(sequenceTimes(1:end-1), currentTicketsSoldHistory, '--');
+title('Ticket price vs. # tickets sold')
 
 
 
